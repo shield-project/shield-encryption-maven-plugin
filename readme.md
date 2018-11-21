@@ -1,0 +1,1 @@
+### 本插件是用来配合shild-project-encryption使用.开发中
