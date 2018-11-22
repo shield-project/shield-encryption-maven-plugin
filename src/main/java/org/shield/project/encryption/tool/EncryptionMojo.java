@@ -17,11 +17,11 @@ public class EncryptionMojo extends AbstractMojo {
     @Parameter(property = "secretKeyPath")
     private String secretKeyPath;
     @Parameter(property = "secretKey")
-    private String secretKey = "123456";
+    private String secretKey;
     @Parameter(property = "configSuffix")
-    private String configSuffix = "\\.properties";
+    private String configSuffix;
     @Parameter(property = "configPath", required = true)
-    private String configPath = "C:\\Users\\PC\\IdeaProjects\\encryption-tool-plugin\\src\\main\\resources\\a.properties";
+    private String configPath;
 
     public void execute() throws MojoFailureException {
         ConfigTool.check(secretKeyPath, secretKey, configSuffix, configPath);
