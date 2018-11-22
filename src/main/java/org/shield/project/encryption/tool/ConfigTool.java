@@ -1,17 +1,17 @@
 package org.shield.project.encryption.tool;
 
 import org.apache.maven.plugin.MojoFailureException;
+import org.shield.project.encryption.config.maven.EncryptEnum;
+import org.shield.project.encryption.config.maven.MavenSupport;
 
 import java.io.*;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.shield.project.encryption.tool.Property.PROPERTY;
-
-public class ConfigTools {
+public class ConfigTool {
     public static void check(String secretKeyPath, String secretKey, String configSuffix, String configPath) throws MojoFailureException {
-        if ((Objects.isNull(secretKey) || secretKey.trim().isEmpty()) || (Objects.isNull(secretKeyPath) || secretKeyPath.trim().isEmpty()))
+        if ((Objects.isNull(secretKey) || secretKey.trim().isEmpty()) && (Objects.isNull(secretKeyPath) || secretKeyPath.trim().isEmpty()))
             throw new MojoFailureException("Did you forget to defined secretKey or secretKeyPath?");
 
         if (Objects.isNull(configPath) || configPath.isEmpty())
@@ -33,7 +33,7 @@ public class ConfigTools {
 
     static Pattern pattern;
 
-    public static List<File> searchFile(String configPath, String configSuffix) throws MojoFailureException {
+    public static List<File> searchFile(String secretKey,String configPath, String configSuffix) throws MojoFailureException {
         List<File> files = new ArrayList<>();
         File file = new File(configPath);
         if (!file.exists())
@@ -43,13 +43,13 @@ public class ConfigTools {
         return files;
     }
 
-    public static void findAndReplace(Property property, File file) throws MojoFailureException {
+    public static void findAndReplace(String secretKey,Property property, File file) throws MojoFailureException {
         switch (property) {
             case PROPERTY:
-                findAndReplaceByProperty(file);
+                findAndReplaceByProperty(secretKey,file);
                 break;
             case YAML:
-                findAndReplaceByYAML(file);
+                findAndReplaceByYAML(secretKey,file);
                 break;
             default:
                 //the block will be enter???
@@ -57,7 +57,8 @@ public class ConfigTools {
         }
     }
 
-    public static void findAndReplaceByProperty(File file) throws MojoFailureException {
+    public static void findAndReplaceByProperty(String secretKey,File file) throws MojoFailureException {
+        List<EncryptEnum> encryptEnumList = MavenSupport.encryptEnumList;
         Properties property = new Properties();
         try {
             property.load(new FileInputStream(file));
@@ -65,14 +66,23 @@ public class ConfigTools {
             throw new MojoFailureException(e.getMessage());
         }
         Enumeration<?> enumeration = property.propertyNames();
-        while(enumeration.hasMoreElements()){
+        while (enumeration.hasMoreElements()) {
             String key = (String) enumeration.nextElement();
             String value = property.getProperty(key);
-
+            Optional<EncryptEnum> any = encryptEnumList.stream().filter(e -> value.startsWith(e.getPrefix()) && value.endsWith(e.getSuffix())).findAny();
+            if (!any.isPresent()) continue;
+            EncryptEnum encryptEnum = any.get();
+            String encryption = EncryptionTool.encryption(secretKey,value, encryptEnum);
+            property.setProperty(key,encryption);
+        }
+        try(FileOutputStream fileOutputStream = new FileOutputStream(file)){
+            property.store(fileOutputStream,"Encryption by shield-project-maven-plugin");
+        }catch (Exception e){
+            throw new MojoFailureException(e.getMessage());
         }
     }
 
-    public static void findAndReplaceByYAML(File file) {
+    public static void findAndReplaceByYAML(String secretKey,File file) {
 
     }
 
@@ -91,13 +101,4 @@ public class ConfigTools {
 
     }
 
-    public static void main(String[] args) throws IOException {
-        Properties properties = new Properties();
-        properties.load(new FileInputStream("C:\\Users\\PC\\IdeaProjects\\encryption-tool-plugin\\src\\main\\resources\\a.properties"));
-        Enumeration<?> enumeration = properties.propertyNames();
-        while(enumeration.hasMoreElements()){
-            String o = (String)enumeration.nextElement();
-            System.out.println(o+"--"+properties.get(o));
-        }
-    }
 }
