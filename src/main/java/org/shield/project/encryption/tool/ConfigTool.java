@@ -3,10 +3,7 @@ package org.shield.project.encryption.tool;
 import org.apache.maven.plugin.MojoFailureException;
 import org.shield.project.encryption.config.maven.EncryptEnum;
 import org.shield.project.encryption.config.maven.MavenSupport;
-import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.events.Event;
-import org.yaml.snakeyaml.nodes.Node;
 
 import java.io.*;
 import java.util.*;
@@ -41,7 +38,7 @@ public class ConfigTool {
 
     private static Pattern pattern;
 
-    public static List<File> searchFile(String secretKey, String configPath, String configSuffix) throws MojoFailureException {
+    public static List<File> searchFile(String configPath, String configSuffix) throws MojoFailureException {
         List<File> files = new ArrayList<>();
         File file = new File(configPath);
         if (!file.exists())

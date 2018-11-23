@@ -37,7 +37,7 @@ public class EncryptionMojo extends AbstractMojo {
         }
         if (Objects.isNull(secret) && secret.isEmpty())
             throw new MojoFailureException("Did you forget set the secret?");
-        List<File> files = ConfigTool.searchFile(secretKey, configPath, configSuffix);
+        List<File> files = ConfigTool.searchFile(configPath, configSuffix);
         files.stream().forEach(
                 e -> {
                     try {
