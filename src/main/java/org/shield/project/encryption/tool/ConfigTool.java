@@ -23,6 +23,7 @@ public class ConfigTool {
             throw new MojoFailureException("Did you forget to defined configPath?");
     }
 
+    //
     public static String fetchSecret(String secretKeyPath) throws MojoFailureException {
         File file = new File(secretKeyPath);
         if (!file.exists())
@@ -36,8 +37,10 @@ public class ConfigTool {
         }
     }
 
+    //
     private static Pattern pattern;
 
+    //
     public static List<File> searchFile(String configPath, String configSuffix) throws MojoFailureException {
         List<File> files = new ArrayList<>();
         File file = new File(configPath);
@@ -62,6 +65,7 @@ public class ConfigTool {
         }
     }
 
+    //
     static List<EncryptEnum> encryptEnumList = MavenSupport.encryptEnumList;
 
     public static void findAndReplaceByProperty(String secretKey, File file) throws MojoFailureException {
@@ -76,9 +80,14 @@ public class ConfigTool {
         while (enumeration.hasMoreElements()) {
             String key = (String) enumeration.nextElement();
             String value = property.getProperty(key);
-            Optional<EncryptEnum> any = encryptEnumList.stream().filter(e -> value.startsWith(e.getPrefix()) && value.endsWith(e.getSuffix())).findAny();
-            if (!any.isPresent()) continue;
-            EncryptEnum encryptEnum = any.get();
+            EncryptEnum encryptEnum = null;
+            for (EncryptEnum ee : encryptEnumList) {
+                if (value.startsWith(ee.getPrefix()) && value.endsWith(ee.getSuffix())) {
+                    encryptEnum = ee;
+                    break;
+                }
+            }
+            if (Objects.isNull(encryptEnum)) return;
             String encryption = EncryptionTool.encryption(secretKey, value, encryptEnum);
             property.setProperty(key, encryption);
         }
@@ -92,13 +101,14 @@ public class ConfigTool {
     public static void findAndReplaceByYAML(String secretKey, File file) throws MojoFailureException {
         Yaml yaml = new Yaml();
         try {
-            Map<String, Object> map = (Map<String, Object>) yaml.load(new FileReader(file));
+            Map<String, Object> map = yaml.load(new FileReader(file));
             findAndReplace4Yaml(secretKey, null, null, map);
             yaml.dump(map, new FileWriter(file));
         } catch (IOException e) {
             throw new MojoFailureException(e.getMessage());
         }
     }
+
 
     /**
      * 查找所有与configSuffix匹配的文件
@@ -120,20 +130,29 @@ public class ConfigTool {
         }
     }
 
-
+    //
+//
     private static void findAndReplace4Yaml(String secretKey, Object parent, Object key, Object data) {
         if (data instanceof Map) {
             Map<String, Object> dataMap = (Map<String, Object>) data;
-            dataMap.entrySet().forEach(e -> findAndReplace4Yaml(secretKey, dataMap, e.getKey(), e.getValue()));
+            for (Map.Entry<String, Object> stringObjectEntry : dataMap.entrySet()) {
+                findAndReplace4Yaml(secretKey, dataMap, stringObjectEntry.getKey(), stringObjectEntry.getValue());
+            }
+//            dataMap.entrySet().forEach(e -> findAndReplace4Yaml(secretKey, dataMap, e.getKey(), e.getValue()));
         } else if (data instanceof List) {
             ArrayList dataList = (ArrayList) data;
             for (int i = 0; i < dataList.size(); i++)
                 findAndReplace4Yaml(secretKey, data, i, dataList.get(i));
         } else if (data instanceof String) {
             String needEncrypt = (String) data;
-            Optional<EncryptEnum> any = encryptEnumList.stream().filter(e -> needEncrypt.startsWith(e.getPrefix()) && needEncrypt.endsWith(e.getSuffix())).findAny();
-            if (!any.isPresent()) return;
-            EncryptEnum encryptEnum = any.get();
+            EncryptEnum encryptEnum = null;
+            for (EncryptEnum ee : encryptEnumList) {
+                if (needEncrypt.startsWith(ee.getPrefix()) && needEncrypt.endsWith(ee.getSuffix())) {
+                    encryptEnum = ee;
+                    break;
+                }
+            }
+            if (Objects.isNull(encryptEnum)) return;
             String encryption = EncryptionTool.encryption(secretKey, needEncrypt, encryptEnum);
             if (parent instanceof Map) {
                 ((Map) parent).put(key, encryption);
