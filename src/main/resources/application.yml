@@ -1,7 +1,0 @@
-spring:
-  profiles:
-    include:
-      - dv
-      - sda
-    active: sad
-    asd:  TEXT(123)

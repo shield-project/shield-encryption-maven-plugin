@@ -92,7 +92,15 @@ public class ConfigTool {
         }
     }
 
-    public static void findAndReplaceByYAML(String secretKey, File file) {
+    public static void findAndReplaceByYAML(String secretKey, File file) throws MojoFailureException {
+        Yaml yaml = new Yaml();
+        try {
+            Map<String, Object> map = (Map<String, Object>) yaml.load(new FileReader(file));
+            findAndReplace4Yaml(secretKey, null, null, map);
+            yaml.dump(map, new FileWriter(file));
+        } catch (IOException e) {
+            throw new MojoFailureException(e.getMessage());
+        }
     }
 
     /**
@@ -115,14 +123,6 @@ public class ConfigTool {
         }
     }
 
-//    public static void main(String[] args) throws FileNotFoundException {
-//        File file = new File("target/classes/application.yml");
-//        Yaml yaml = new Yaml();
-//        Map<String, Object> map = (Map<String, Object>) yaml.load(new FileReader(file));
-//        findAndReplace4Yaml("123456", null, null, map);
-//        System.out.println(map);
-//        System.out.println(yaml.dumpAs(map, null, DumperOptions.FlowStyle.AUTO));
-//    }
 
     private static void findAndReplace4Yaml(String secretKey, Object parent, Object key, Object data) {
         if (data instanceof Map) {
