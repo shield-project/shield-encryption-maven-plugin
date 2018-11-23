@@ -9,6 +9,8 @@ import org.apache.maven.plugins.annotations.Parameter;
 import java.io.File;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 @Mojo(name = "encryption", defaultPhase = LifecyclePhase.COMPILE)
@@ -25,6 +27,8 @@ public class EncryptionMojo extends AbstractMojo {
 
     public void execute() throws MojoFailureException {
         ConfigTool.check(secretKeyPath, secretKey, configSuffix, configPath);
+        if (configSuffix != null && !configSuffix.isEmpty())
+            configSuffix.replace(".", "\\.").replace("*", ".*?").concat("$");
         String secret;
         if (Objects.nonNull(secretKey) && !secretKey.isEmpty())
             secret = secretKey;
